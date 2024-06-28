@@ -25,17 +25,17 @@ logging.getLogger(__name__)
 def _decrypt_payload(payload: bytes, key: KeyPair) -> bytes:
     eph_key = ec.EllipticCurvePublicKey.from_encoded_point(
         ec.SECP224R1(),
-        payload[5:62],
+        payload[-16 - 10 - 57 : -16 - 10],
     )
     shared_key = key.dh_exchange(eph_key)
     symmetric_key = hashlib.sha256(
-        shared_key + b"\x00\x00\x00\x01" + payload[5:62],
+        shared_key + b"\x00\x00\x00\x01" + payload[-16 - 10 - 57 : -16 - 10],
     ).digest()
 
     decryption_key = symmetric_key[:16]
     iv = symmetric_key[16:]
-    enc_data = payload[62:72]
-    tag = payload[72:]
+    enc_data = payload[-16 - 10 : -16]
+    tag = payload[-16:]
 
     decryptor = Cipher(
         algorithms.AES(decryption_key),
